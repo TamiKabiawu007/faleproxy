@@ -11,13 +11,17 @@ on:
 jobs:
   Test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
           
       - name: Install Dependencies
         run: npm ci
@@ -32,17 +36,17 @@ jobs:
         run: |
           if [ "${{ steps.run-tests.outcome }}" == "success" ]; then
             echo "Tests passed. Proceeding with preview deployment."
-            echo "::set-output name=passed::true"
+            echo "passed=true" >> $GITHUB_OUTPUT
           else
             echo "Tests failed, but we'll still create a preview deployment for review purposes."
-            echo "::set-output name=passed::false"
+            echo "passed=false" >> $GITHUB_OUTPUT
           fi
 
   Deploy-Preview:
     needs: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
